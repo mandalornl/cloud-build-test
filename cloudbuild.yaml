@@ -15,3 +15,6 @@ steps:
       pnpm install --frozen-lockfile
       npx nuxi generate
       npx firebase-tools --project=$PROJECT_ID deploy --only=hosting --non-interactive
+
+options:
+  logging: CLOUD_LOGGING_ONLY
