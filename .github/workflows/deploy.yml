@@ -1,0 +1,14 @@
+name: Deploy to Firebase Hosting
+on:
+  push:
+    branches:
+      - deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call webhook URL
+        run: |
+          curl -X POST '${{ vars.WEBHOOK_URL }}' \
+            -H 'Content-Type: application/json' \
+            -d '{}'
