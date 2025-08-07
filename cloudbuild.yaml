@@ -1,5 +1,30 @@
 steps:
-  - name: 'node:22'
+  - id: 'Restore'
+    name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        
+        storage_bucket="${PROJECT_ID}.firebasestorage.app"
+        pnpm_storage_uri="gs://${storage_bucket}/pnpm-$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tgz"
+        nuxt_storage_uri="gs://${storage_bucket}/nuxt-${SHORT_SHA}.tgz"
+        
+        if gsutil -q stat "${pnpm_storage_uri}"; then
+          mkdir -p /root/.local/share/pnpm/store
+          echo "--> Restoring PNPM cache from ${pnpm_storage_uri}"
+          gsutil -q cp "${pnpm_storage_uri}" - | tar -xz -C /root/.local/share/pnpm/store
+        fi
+        
+        if gsutil -q stat "${nuxt_storage_uri}"; then
+          mkdir -p /workspace/.nuxt
+          echo "--> Restoring NUXT cache from ${nuxt_storage_uri}"
+          gsutil -q cp "${nuxt_storage_uri}" - | tar -xz -C /workspace/.nuxt
+        fi
+
+  - id: 'Install & Deploy'
+    name: 'node:22'
     env:
       - "FIREBASE_API_KEY=${_FIREBASE_API_KEY}"
       - "FIREBASE_APP_CHECK_DEBUG=${_FIREBASE_APP_CHECK_DEBUG}"
@@ -11,10 +36,41 @@ steps:
       - "FIREBASE_STORAGE_BUCKET=${_FIREBASE_STORAGE_BUCKET}"
     script: |
       #!/usr/bin/env bash
+      set -e
       corepack enable
       pnpm install --frozen-lockfile
       npx nuxi generate
       npx firebase-tools --project=$PROJECT_ID deploy --only=hosting --non-interactive
 
+  - id: 'Cache'
+    name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -e
+        
+        storage_bucket="${PROJECT_ID}.firebasestorage.app"
+        nuxt_storage_uri="gs://${storage_bucket}/nuxt-${SHORT_SHA}.tgz"
+        
+        if [ -d /root/.local/share/pnpm/store ]; then
+          pnpm_storage_uri="gs://${storage_bucket}/pnpm-$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tgz"
+          echo "--> Caching PNPM to ${pnpm_storage_uri}"
+          tar -czf /tmp/pnpm-cache.tgz -C /root/.local/share/pnpm/store . 
+          gsutil -q cp /tmp/pnpm-cache.tgz "${pnpm_storage_uri}"
+        fi
+        
+        if [ -d /workspace/.nuxt ] && ! gsutil -q stat "${nuxt_storage_uri}"; then
+          echo "--> Caching NUXT to ${nuxt_storage_uri}"
+          tar -czf /tmp/nuxt-cache.tgz -C /workspace/.nuxt .
+          gsutil -q cp /tmp/nuxt-cache.tgz "${nuxt_storage_uri}"
+        fi
+
+timeout: 300s
 options:
   logging: CLOUD_LOGGING_ONLY
+  volumes:
+    - name: 'pnpm-store'
+      path: '/root/.local/share/pnpm/store'
+    - name: 'nuxt-cache'
+      path: '/workspace/.nuxt'
