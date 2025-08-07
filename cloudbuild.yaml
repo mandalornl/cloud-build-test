@@ -38,6 +38,7 @@ steps:
       #!/usr/bin/env bash
       set -e
       corepack enable
+      echo "PNPM store is located at: ${pnpm store path}"
       pnpm install --frozen-lockfile
       npx nuxi generate
       npx firebase-tools --project=$PROJECT_ID deploy --only=hosting --non-interactive
