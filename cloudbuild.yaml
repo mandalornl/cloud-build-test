@@ -12,9 +12,9 @@ steps:
         nuxt_storage_uri="gs://${storage_bucket}/nuxt-${SHORT_SHA}.tgz"
         
         if gsutil -q stat "${pnpm_storage_uri}"; then
-          mkdir -p /root/.local/share/pnpm/store
+          mkdir -p /workspace/.pnpm-store
           echo "--> Restoring PNPM cache from ${pnpm_storage_uri}"
-          gsutil -q cp "${pnpm_storage_uri}" - | tar -xz -C /root/.local/share/pnpm/store
+          gsutil -q cp "${pnpm_storage_uri}" - | tar -xz -C /workspace/.pnpm-store
         fi
         
         if gsutil -q stat "${nuxt_storage_uri}"; then
@@ -38,7 +38,6 @@ steps:
       #!/usr/bin/env bash
       set -e
       corepack enable
-      echo "PNPM store is located at: $(pnpm store path)"
       pnpm install --frozen-lockfile
       npx nuxi generate
       npx firebase-tools --project=$PROJECT_ID deploy --only=hosting --non-interactive
@@ -54,10 +53,10 @@ steps:
         storage_bucket="${PROJECT_ID}.firebasestorage.app"
         nuxt_storage_uri="gs://${storage_bucket}/nuxt-${SHORT_SHA}.tgz"
         
-        if [ -d /root/.local/share/pnpm/store ]; then
+        if [ -d /workspace/.pnpm-store ]; then
           pnpm_storage_uri="gs://${storage_bucket}/pnpm-$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tgz"
           echo "--> Caching PNPM to ${pnpm_storage_uri}"
-          tar -czf /tmp/pnpm-cache.tgz -C /root/.local/share/pnpm/store . 
+          tar -czf /tmp/pnpm-cache.tgz -C /workspace/.pnpm-store . 
           gsutil -q cp /tmp/pnpm-cache.tgz "${pnpm_storage_uri}"
         fi
         
@@ -72,6 +71,6 @@ options:
   logging: CLOUD_LOGGING_ONLY
   volumes:
     - name: 'pnpm-store'
-      path: '/root/.local/share/pnpm/store'
+      path: '/workspace/.pnpm-store'
     - name: 'nuxt-cache'
       path: '/workspace/.nuxt'
