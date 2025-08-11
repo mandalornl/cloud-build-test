@@ -45,10 +45,12 @@ steps:
         
         storage_bucket="${PROJECT_ID}.firebasestorage.app"
         storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
-        
-        echo "--> Caching installed packages to ${storage_uri}"
-        tar -czf /tmp/packages.tar.gz -C node_modules .
-        gsutil -q cp /tmp/packages.tar.gz "${storage_uri}"
+
+        if [ -d node_modules ] && ! gsutil -q stat "${storage_uri}"; then
+          echo "--> Caching installed packages to ${storage_uri}"
+          tar -czf /tmp/packages.tar.gz -C node_modules .
+          gsutil -q cp /tmp/packages.tar.gz "${storage_uri}"
+        fi
 
 timeout: 300s
 options:
