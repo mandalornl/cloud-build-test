@@ -54,7 +54,7 @@ steps:
         old_cache_id="$(cat cache-id)"
         new_cache_id="$(ls -lR node_modules/.cache/nuxt/builds/vue | sha256sum | cut -d' ' -f1)"
       
-        if new_cache_id != old_cache_id; then
+        if [ "${new_cache_id}" != "${old_cache_id}" ]; then
           storage_uri="$(cat storage-uri)"
         
           echo "--> Caching installed packages to ${storage_uri}"
