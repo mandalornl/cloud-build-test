@@ -8,7 +8,7 @@ steps:
         set -e
         
         storage_bucket="${PROJECT_ID}.firebasestorage.app"
-        storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)"
+        storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)/"
         
         if gsutil -q stat "${storage_uri}"; then
           mkdir node_modules
@@ -44,7 +44,10 @@ steps:
       - |
         set -e
 
-        if [ -d node_modules ]; then        
+        if [ -d node_modules ]; then     
+          storage_bucket="${PROJECT_ID}.firebasestorage.app"
+          storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)/"
+        
           echo "--> Caching installed packages to ${storage_uri}"
           gsutil -m rsync -r node_modules "${storage_uri}"
         fi
