@@ -8,12 +8,14 @@ steps:
         set -e
         
         storage_bucket="${PROJECT_ID}.firebasestorage.app"
-        storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)/"
+        storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
+        
+        echo "${storage_uri}" > storage-uri.txt
         
         if gsutil -q stat "${storage_uri}"; then
           mkdir node_modules
           echo "--> Restoring installed packages from ${storage_uri}"
-          gsutil -m rsync -r "${storage_uri}" node_modules
+          gsutil -q cp "${storage_uri}" - | tar -xz -C node_modules
         fi
 
   - id: 'Install & Deploy'
@@ -43,13 +45,13 @@ steps:
       - '-c'
       - |
         set -e
-
-        if [ -d node_modules ]; then     
-          storage_bucket="${PROJECT_ID}.firebasestorage.app"
-          storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)/"
+        
+        if [ -d node_modules ]; then
+          storage_uri="$(cat storage-uri.txt)"
         
           echo "--> Caching installed packages to ${storage_uri}"
-          gsutil -m rsync -r node_modules "${storage_uri}"
+          tar -czf /tmp/packages.tar.gz -C node_modules .
+          gsutil -q cp /tmp/packages.tar.gz "${storage_uri}"
         fi
 
 timeout: 300s
