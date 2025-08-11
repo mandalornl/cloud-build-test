@@ -8,19 +8,12 @@ steps:
         set -e
         
         storage_bucket="${PROJECT_ID}.firebasestorage.app"
-        pnpm_storage_uri="gs://${storage_bucket}/pnpm-$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tgz"
-        nuxt_storage_uri="gs://${storage_bucket}/nuxt-${SHORT_SHA}.tgz"
+        storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
         
-        if gsutil -q stat "${pnpm_storage_uri}"; then
-          mkdir -p /workspace/.pnpm-store
-          echo "--> Restoring PNPM cache from ${pnpm_storage_uri}"
-          gsutil -q cp "${pnpm_storage_uri}" - | tar -xz -C /workspace/.pnpm-store
-        fi
-        
-        if gsutil -q stat "${nuxt_storage_uri}"; then
-          mkdir -p /workspace/.nuxt
-          echo "--> Restoring NUXT cache from ${nuxt_storage_uri}"
-          gsutil -q cp "${nuxt_storage_uri}" - | tar -xz -C /workspace/.nuxt
+        if gsutil -q stat "${storage_uri}"; then
+          mkdir node_modules
+          echo "--> Restoring installed packages from ${storage_uri}"
+          gsutil -q cp "${storage_uri}" - | tar -xz -C node_modules
         fi
 
   - id: 'Install & Deploy'
@@ -51,26 +44,12 @@ steps:
         set -e
         
         storage_bucket="${PROJECT_ID}.firebasestorage.app"
-        nuxt_storage_uri="gs://${storage_bucket}/nuxt-${SHORT_SHA}.tgz"
+        storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
         
-        if [ -d /workspace/.pnpm-store ]; then
-          pnpm_storage_uri="gs://${storage_bucket}/pnpm-$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tgz"
-          echo "--> Caching PNPM to ${pnpm_storage_uri}"
-          tar -czf /tmp/pnpm-cache.tgz -C /workspace/.pnpm-store . 
-          gsutil -q cp /tmp/pnpm-cache.tgz "${pnpm_storage_uri}"
-        fi
-        
-        if [ -d /workspace/.nuxt ] && ! gsutil -q stat "${nuxt_storage_uri}"; then
-          echo "--> Caching NUXT to ${nuxt_storage_uri}"
-          tar -czf /tmp/nuxt-cache.tgz -C /workspace/.nuxt .
-          gsutil -q cp /tmp/nuxt-cache.tgz "${nuxt_storage_uri}"
-        fi
+        echo "--> Caching installed packages to ${storage_uri}"
+        tar -czf /tmp/packages.tar.gz -C node_modules .
+        gsutil -q cp /tmp/packages.tar.gz "${storage_uri}"
 
 timeout: 300s
 options:
   logging: CLOUD_LOGGING_ONLY
-  volumes:
-    - name: 'pnpm-store'
-      path: '/workspace/.pnpm-store'
-    - name: 'nuxt-cache'
-      path: '/workspace/.nuxt'
