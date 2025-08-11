@@ -10,12 +10,17 @@ steps:
         storage_bucket="${PROJECT_ID}.firebasestorage.app"
         storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
         
-        echo "${storage_uri}" > storage-uri.txt
+        echo "${storage_uri}" > storage-uri
+        echo "" > cache-id
         
         if gsutil -q stat "${storage_uri}"; then
           mkdir node_modules
           echo "--> Restoring installed packages from ${storage_uri}"
           gsutil -q cp "${storage_uri}" - | tar -xz -C node_modules
+        
+          if [ -d node_modules/.cache/nuxt/builds/vue ]; then
+            echo "$(ls -lR node_modules/.cache/nuxt/builds/vue | sha256sum | cut -d' ' -f1)" > cache-id
+          fi
         fi
 
   - id: 'Install & Deploy'
@@ -46,8 +51,11 @@ steps:
       - |
         set -e
         
-        if [ -d node_modules ]; then
-          storage_uri="$(cat storage-uri.txt)"
+        old_cache_id="$(cat cache-id)"
+        new_cache_id="$(ls -lR node_modules/.cache/nuxt/builds/vue | sha256sum | cut -d' ' -f1)"
+      
+        if new_cache_id != old_cache_id; then
+          storage_uri="$(cat storage-uri)"
         
           echo "--> Caching installed packages to ${storage_uri}"
           tar -czf /tmp/packages.tar.gz -C node_modules .
