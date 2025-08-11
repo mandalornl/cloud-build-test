@@ -19,6 +19,7 @@ steps:
   - id: 'Install & Deploy'
     name: 'node:22'
     env:
+      - "SHORT_SHA=${SHORT_SHA}"
       - "FIREBASE_API_KEY=${_FIREBASE_API_KEY}"
       - "FIREBASE_APP_CHECK_DEBUG=${_FIREBASE_APP_CHECK_DEBUG}"
       - "FIREBASE_APP_CHECK_SITE_KEY=${_FIREBASE_APP_CHECK_SITE_KEY}"
