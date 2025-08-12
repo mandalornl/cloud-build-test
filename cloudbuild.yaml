@@ -7,19 +7,18 @@ steps:
       - |
         set -e
         
-        storage_bucket="${PROJECT_ID}.firebasestorage.app"
-        storage_uri="gs://${storage_bucket}/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
+        storage_uri="gs://${PROJECT_ID}.firebasestorage.app/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
         
         echo "${storage_uri}" > storage-uri
-        echo "" > cache-id
+        echo "$(date +%s%N)" > cache-id
         
         if gsutil -q stat "${storage_uri}"; then
           mkdir node_modules
           echo "--> Restoring installed packages from ${storage_uri}"
           gsutil -q cp "${storage_uri}" - | tar -xz -C node_modules
         
-          if [ -d node_modules/.cache/nuxt/builds/vue ]; then
-            echo "$(ls -lR node_modules/.cache/nuxt/builds/vue | sha256sum | cut -d' ' -f1)" > cache-id
+          if [ -d node_modules/.cache ]; then
+            echo "$(ls -lR node_modules/.cache | sha256sum | cut -d' ' -f1)" > cache-id
           fi
         fi
 
@@ -52,7 +51,11 @@ steps:
         set -e
         
         old_cache_id="$(cat cache-id)"
-        new_cache_id="$(ls -lR node_modules/.cache/nuxt/builds/vue | sha256sum | cut -d' ' -f1)"
+        new_cache_id="$(date +%s%N)"
+        
+        if [ -d node_modules/.cache ]; then
+          new_cache_id="$(ls -lR node_modules/.cache | sha256sum | cut -d' ' -f1)"
+        fi
       
         if [ "${new_cache_id}" != "${old_cache_id}" ]; then
           storage_uri="$(cat storage-uri)"
