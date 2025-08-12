@@ -7,7 +7,7 @@ steps:
       - |
         set -e
         
-        storage_uri="gs://${PROJECT_ID}.firebasestorage.app/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
+        storage_uri="gs://${PROJECT_ID}-cloud-build/$(sha256sum pnpm-lock.yaml | cut -d' ' -f1).tar.gz"
         
         echo "${storage_uri}" > storage-uri
         echo "$(date +%s%N)" > cache-id
