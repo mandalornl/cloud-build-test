@@ -11,7 +11,7 @@ steps:
 
         if [ "${ids[0]}" == "${BUILD_ID}" ]; then
           for id in "${ids[@]:1}"; do
-            if gcloud builds cancel "${id}" --region=europe-west4 --quiet; then
+            if gcloud builds cancel "${id}" --region=europe-west4 --quiet > /dev/null 2>&1; then
               echo "--> Cancelled build ${id}" 
             fi
           done
