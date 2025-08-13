@@ -7,12 +7,13 @@ steps:
       - |
         set -e
         
-        ids=( $(gcloud builds list --ongoing --region=europe-west4 --format="value(ID)" --sort-by=~createTime) )
+        mapfile -t ids < <(gcloud builds list --ongoing --region=europe-west4 --format="value(ID)" --sort-by=~createTime)
 
         if [ "${ids[0]}" == "${BUILD_ID}" ]; then
           for id in "${ids[@]:1}"; do
-            echo "--> Canceling build ${id}"
-            gcloud builds cancel "${id}" --region=europe-west4 --quiet
+            if gcloud builds cancel "${id}" --region=europe-west4 --quiet; then
+              echo "--> Cancelled build ${id}" 
+            fi
           done
         fi
 
