@@ -9,14 +9,12 @@ steps:
         
         ids=( $(gcloud builds list --ongoing --region=europe-west4 --format="value(ID)" --sort-by=~createTime) )
 
-        if [ "${ids[0]}" != "${BUILD_ID}" ]; then
-          exit 1
+        if [ "${ids[0]}" == "${BUILD_ID}" ]; then
+          for id in "${ids[@]:1}"; do
+            echo "--> Canceling build ${id}"
+            gcloud builds cancel "${id}" --region=europe-west4 --quiet
+          done
         fi
-
-        for id in "${ids[@]:1}"; do
-          echo "--> Canceling build ${id}"
-          gcloud builds cancel "${id}" --region=europe-west4 --quiet
-        done
 
   - id: 'Restore'
     name: 'gcr.io/cloud-builders/gsutil'
