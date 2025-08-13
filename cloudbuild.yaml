@@ -1,6 +1,6 @@
 steps:
   - id: 'Cancel'
-    name: 'grc.io/cloud-builder/gcloud'
+    name: 'gcr.io/cloud-builder/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
