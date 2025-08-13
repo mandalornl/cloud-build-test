@@ -1,6 +1,6 @@
 steps:
   - id: 'Cancel'
-    name: 'gcr.io/cloud-builder/gcloud'
+    name: 'europe-west4-docker.pkg.dev/cloud-builder/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -19,7 +19,7 @@ steps:
         done
 
   - id: 'Restore'
-    name: 'gcr.io/cloud-builders/gsutil'
+    name: 'europe-west4-docker.pkg.dev/cloud-builders/gsutil'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -60,7 +60,7 @@ steps:
       npx firebase-tools --project=$PROJECT_ID deploy --only=hosting --non-interactive
 
   - id: 'Cache'
-    name: 'gcr.io/cloud-builders/gsutil'
+    name: 'europe-west4-docker.pkg.dev/cloud-builders/gsutil'
     entrypoint: 'bash'
     args:
       - '-c'
