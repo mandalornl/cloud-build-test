@@ -129,7 +129,7 @@ Open https://console.cloud.google.com/cloud-build/triggers.
 - Click on `Create`.
 
 ## Webhook URL
-Under `Webhook URL preview` you will find the URL you need during the `GitHub` configuration step e.g.:
+Once the `trigger` is created, you can find the `Webhook URL` when you expand `Show URL preview`. You will need this URL during the `GitHub` configuration step e.g.:
 ```
 https://cloudbuild.googleapis.com/v1/projects/<project-id>/locations/<region>/triggers/<trigger-name>:webhook?key=<key>&secret=<secret>&trigger=<trigger-name>&projectId=<project-id>
 ```
@@ -172,4 +172,4 @@ jobs:
 
 - Open `Actions` under `Secrets and variables` under `Settings`.
 - Open the `Variables` tab and click `New Repository variable`.
-- Create the variable `WEBHOOK_URL` with the `Cloud Build` [webhook URL](#webhook-url).
+- Create the variable `WEBHOOK_URL` and use the `Cloud Build` [Webhook URL](#webhook-url).
